@@ -20,6 +20,7 @@ import io.cdap.wrangler.api.LazyNumber;
 import io.cdap.wrangler.api.RecipeSymbol;
 import io.cdap.wrangler.api.SourceInfo;
 import io.cdap.wrangler.api.Triplet;
+import io.cdap.wrangler.api.parser.*;
 import io.cdap.wrangler.api.parser.Bool;
 import io.cdap.wrangler.api.parser.BoolList;
 import io.cdap.wrangler.api.parser.ColumnName;
@@ -316,7 +317,6 @@ public final class RecipeVisitor extends DirectivesBaseVisitor<RecipeSymbol.Buil
     builder.addToken(new TextList(strs));
     return builder;
   }
-
   private SourceInfo getOriginalSource(ParserRuleContext ctx) {
     int a = ctx.getStart().getStartIndex();
     int b = ctx.getStop().getStopIndex();
@@ -325,5 +325,27 @@ public final class RecipeVisitor extends DirectivesBaseVisitor<RecipeSymbol.Buil
     int lineno = ctx.getStart().getLine();
     int column = ctx.getStart().getCharPositionInLine();
     return new SourceInfo(lineno, column, text);
+  }
+
+  @Override
+  public RecipeSymbol.Builder visitValue(DirectivesParser.ValueContext ctx) {
+    Token token;
+    if (ctx.Number() != null) {
+      token = new Numeric(new LazyNumber(ctx.Number().getText()));
+    } else if (ctx.Column() != null) {
+      token = new ColumnName(ctx.Column().getText().substring(1));
+    } else if (ctx.Bool() != null) {
+      token = new Bool(Boolean.valueOf(ctx.Bool().getText()));
+    } else if (ctx.BYTE_SIZE() != null) {
+      token = new ByteSize(ctx.BYTE_SIZE().getText());
+    } else if (ctx.TIME_DURATION() != null) {
+      token = new TimeDuration(ctx.TIME_DURATION().getText());
+    } else {
+      String text = ctx.String().getText();
+      token = new Text(text.substring(1, text.length() - 1));
+    }
+
+    builder.addToken(token);
+    return builder;
   }
 }

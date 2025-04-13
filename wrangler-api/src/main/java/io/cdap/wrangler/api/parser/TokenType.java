@@ -23,7 +23,6 @@ import java.io.Serializable;
 /**
  * The TokenType class provides the enumerated types for different types of
  * tokens that are supported by the grammar.
- *
  * Each of the enumerated types specified in this class also has associated
  * object representing it. e.g. {@code DIRECTIVE_NAME} is represented by the
  * object {@code DirectiveName}.
@@ -40,6 +39,8 @@ import java.io.Serializable;
  * @see Expression
  * @see Text
  * @see TextList
+ * @see ByteSize
+ * @see TimeDuration
  */
 @PublicEvolving
 public enum TokenType implements Serializable {
@@ -49,13 +50,25 @@ public enum TokenType implements Serializable {
    * name within the recipe.
    */
   DIRECTIVE_NAME,
-
   /**
    * Represents the enumerated type for the object of {@code ColumnName} type.
    * This type is associated with token that represents the column as defined
    * by the grammar as :<column-name>.
    */
   COLUMN_NAME,
+  /**
+   * Represents the enumerated type for the object of {@code ColumnName} type.
+   * This type is associated with token that represents the column as defined
+   * by the grammar as :<column-name>.
+   */
+  BYTE_SIZE,
+
+  /**
+   * Represents the enumerated type for the object of {@code ColumnName} type.
+   * This type is associated with token that represents the column as defined
+   * by the grammar as :<column-name>.
+   */
+  TIME_DURATION,
 
   /**
    * Represents the enumerated type for the object of {@code Text} type.

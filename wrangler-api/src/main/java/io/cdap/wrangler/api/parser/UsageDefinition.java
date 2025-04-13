@@ -118,7 +118,7 @@ public final class UsageDefinition implements Serializable {
         } else if (token.type().equals(TokenType.IDENTIFIER) || token.type().equals(TokenType.NUMERIC)) {
           sb.append(token.name());
         } else if (token.type().equals(TokenType.BOOLEAN_LIST) || token.type().equals(TokenType.NUMERIC_LIST)
-          || token.type().equals(TokenType.TEXT_LIST)) {
+                || token.type().equals(TokenType.TEXT_LIST)) {
           sb.append(token.name()).append("[,").append(token.name()).append(" ...]*");
         } else if (token.type().equals(TokenType.EXPRESSION)) {
           sb.append("exp:{<").append(token.name()).append(">}");
@@ -126,119 +126,123 @@ public final class UsageDefinition implements Serializable {
           sb.append("prop:{key:value,[key:value]*");
         } else if (token.type().equals(TokenType.RANGES)) {
           sb.append("start:end=[bool|text|numeric][,start:end=[bool|text|numeric]*");
+        } else if (token.type().equals(TokenType.BYTE_SIZE)) {
+          sb.append(":").append(token.name());
+        } else if (token.type().equals(TokenType.TIME_DURATION)) {
+          sb.append(":").append(token.name());
+        }
+
+        count--;
+
+        if (token.optional()) {
+          sb.append("]");
+        } else {
+          if (count > 0) {
+            sb.append(" ");
+          }
         }
       }
+      return sb.toString();
+    }
 
-      count--;
+    /**
+     * This is a static method for creating a builder for the <code>UsageDefinition</code>
+     * object. In order to create a <code>UsageDefinition</code>, a builder has to created.
+     *
+     * <p>This builder is provided as user API for constructing the usage specification
+     * for a directive.</p>
+     *
+     * @param directive name of the directive for which the builder is created for.
+     * @return A <code>UsageDefinition.Builder</code> object that can be used to construct
+     * <code>UsageDefinition</code> object.
+     */
+    public static UsageDefinition.Builder builder (String directive){
+      return new UsageDefinition.Builder(directive);
+    }
 
-      if (token.optional()) {
-        sb.append("]");
-      } else {
-        if (count > 0) {
-          sb.append(" ");
-        }
+    /**
+     * This inner builder class provides a way to create <code>UsageDefinition</code>
+     * object. It exposes different methods that allow users to configure the <code>TokenDefinition</code>
+     * for each token used within the usage of a directive.
+     */
+    public static final class Builder {
+      private final String directive;
+      private final List<TokenDefinition> tokens;
+      private int currentOrdinal;
+      private int optionalCnt;
+
+      public Builder(String directive) {
+        this.directive = directive;
+        this.currentOrdinal = 0;
+        this.tokens = new ArrayList<>();
+        this.optionalCnt = 0;
       }
-    }
-    return sb.toString();
-  }
 
-  /**
-   * This is a static method for creating a builder for the <code>UsageDefinition</code>
-   * object. In order to create a <code>UsageDefinition</code>, a builder has to created.
-   *
-   * <p>This builder is provided as user API for constructing the usage specification
-   * for a directive.</p>
-   *
-   * @param directive name of the directive for which the builder is created for.
-   * @return A <code>UsageDefinition.Builder</code> object that can be used to construct
-   * <code>UsageDefinition</code> object.
-   */
-  public static UsageDefinition.Builder builder(String directive) {
-    return new UsageDefinition.Builder(directive);
-  }
+      /**
+       * This method provides a way to set the name and the type of token, while
+       * defaulting the label to 'null' and setting the optional to FALSE.
+       *
+       * @param name of the token in the definition of a directive.
+       * @param type of the token to be extracted.
+       */
+      public void define(String name, TokenType type) {
+        TokenDefinition spec = new TokenDefinition(name, type, null, currentOrdinal, Optional.FALSE);
+        currentOrdinal++;
+        tokens.add(spec);
+      }
 
-  /**
-   * This inner builder class provides a way to create <code>UsageDefinition</code>
-   * object. It exposes different methods that allow users to configure the <code>TokenDefinition</code>
-   * for each token used within the usage of a directive.
-   */
-  public static final class Builder {
-    private final String directive;
-    private final List<TokenDefinition> tokens;
-    private int currentOrdinal;
-    private int optionalCnt;
+      /**
+       * Allows users to define a token with a name, type of the token and additional optional
+       * for the label that is used during creation of the usage for the directive.
+       *
+       * @param name of the token in the definition of a directive.
+       * @param type of the token to be extracted.
+       * @param label label that modifies the usage for this field.
+       */
+      public void define(String name, TokenType type, String label) {
+        TokenDefinition spec = new TokenDefinition(name, type, label, currentOrdinal, Optional.FALSE);
+        currentOrdinal++;
+        tokens.add(spec);
+      }
 
-    public Builder(String directive) {
-      this.directive = directive;
-      this.currentOrdinal = 0;
-      this.tokens = new ArrayList<>();
-      this.optionalCnt = 0;
-    }
+      /**
+       * Method allows users to specify a field as optional in combination to the
+       * name of the token and the type of token.
+       *
+       * @param name of the token in the definition of a directive.
+       * @param type of the token to be extracted.
+       * @param optional <code>Optional#TRUE</code> if token is optional, else <code>Optional#FALSE</code>.
+       */
+      public void define(String name, TokenType type, boolean optional) {
+        TokenDefinition spec = new TokenDefinition(name, type, null, currentOrdinal, optional);
+        optionalCnt = optional ? optionalCnt + 1 : optionalCnt;
+        currentOrdinal++;
+        tokens.add(spec);
+      }
 
-    /**
-     * This method provides a way to set the name and the type of token, while
-     * defaulting the label to 'null' and setting the optional to FALSE.
-     *
-     * @param name of the token in the definition of a directive.
-     * @param type of the token to be extracted.
-     */
-    public void define(String name, TokenType type) {
-      TokenDefinition spec = new TokenDefinition(name, type, null, currentOrdinal, Optional.FALSE);
-      currentOrdinal++;
-      tokens.add(spec);
-    }
+      /**
+       * Method allows users to specify a field as optional in combination to the
+       * name of the token, the type of token and also the ability to specify a label
+       * for the usage.
+       *
+       * @param name of the token in the definition of a directive.
+       * @param type of the token to be extracted.
+       * @param label label that modifies the usage for this field.
+       * @param optional <code>Optional#TRUE</code> if token is optional, else <code>Optional#FALSE</code>.
+       */
+      public void define(String name, TokenType type, String label, boolean optional) {
+        TokenDefinition spec = new TokenDefinition(name, type, label, currentOrdinal, optional);
+        optionalCnt = optional ? optionalCnt + 1 : optionalCnt;
+        currentOrdinal++;
+        tokens.add(spec);
+      }
 
-    /**
-     * Allows users to define a token with a name, type of the token and additional optional
-     * for the label that is used during creation of the usage for the directive.
-     *
-     * @param name of the token in the definition of a directive.
-     * @param type of the token to be extracted.
-     * @param label label that modifies the usage for this field.
-     */
-    public void define(String name, TokenType type, String label) {
-      TokenDefinition spec = new TokenDefinition(name, type, label, currentOrdinal, Optional.FALSE);
-      currentOrdinal++;
-      tokens.add(spec);
-    }
-
-    /**
-     * Method allows users to specify a field as optional in combination to the
-     * name of the token and the type of token.
-     *
-     * @param name of the token in the definition of a directive.
-     * @param type of the token to be extracted.
-     * @param optional <code>Optional#TRUE</code> if token is optional, else <code>Optional#FALSE</code>.
-     */
-    public void define(String name, TokenType type, boolean optional) {
-      TokenDefinition spec = new TokenDefinition(name, type, null, currentOrdinal, optional);
-      optionalCnt = optional ? optionalCnt + 1 : optionalCnt;
-      currentOrdinal++;
-      tokens.add(spec);
-    }
-
-    /**
-     * Method allows users to specify a field as optional in combination to the
-     * name of the token, the type of token and also the ability to specify a label
-     * for the usage.
-     *
-     * @param name of the token in the definition of a directive.
-     * @param type of the token to be extracted.
-     * @param label label that modifies the usage for this field.
-     * @param optional <code>Optional#TRUE</code> if token is optional, else <code>Optional#FALSE</code>.
-     */
-    public void define(String name, TokenType type, String label, boolean optional) {
-      TokenDefinition spec = new TokenDefinition(name, type, label, currentOrdinal, optional);
-      optionalCnt = optional ? optionalCnt + 1 : optionalCnt;
-      currentOrdinal++;
-      tokens.add(spec);
-    }
-
-    /**
-     * @return a instance of <code>UsageDefinition</code> object.
-     */
-    public UsageDefinition build() {
-      return new UsageDefinition(directive, optionalCnt, tokens);
+      /**
+       * @return a instance of <code>UsageDefinition</code> object.
+       */
+      public UsageDefinition build() {
+        return new UsageDefinition(directive, optionalCnt, tokens);
+      }
     }
   }
 }
